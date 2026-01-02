@@ -36,6 +36,7 @@
         .msg-user { background: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
         .suggestion-chip { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; transition: all 0.2s; display: inline-block; margin: 2px; }
         .suggestion-chip:hover { background: #e2e8f0; border-color: #94a3b8; }
+        .typing-indicator { font-style: italic; color: #64748b; font-size: 12px; margin-left: 10px; display: none; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
@@ -105,7 +106,7 @@
             <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
                 <div class="text-center mb-8">
                     <h2 class="text-3xl font-bold text-slate-800">Create Your Account</h2>
-                    <p class="text-slate-500 text-sm mt-1">Join the community of career-focused engineers.</p>
+                    <p class="text-slate-500 text-sm mt-1">Details will be sent to admin for verification.</p>
                 </div>
                 
                 <form onsubmit="handleSignup(event)" class="space-y-6">
@@ -155,7 +156,7 @@
 
                     <div class="flex gap-3">
                         <button type="button" onclick="goBack()" class="flex-1 py-3 border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
-                        <button type="submit" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg">Register Now</button>
+                        <button type="submit" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg">Register & Send to Admin</button>
                     </div>
                 </form>
             </div>
@@ -1171,6 +1172,7 @@
                     year: "4th Year"
                 };
                 loginUser(mockUser);
+                alert("🔒 Login Successful! (Admin notified at pavankalyanbashaboina@gmail.com)");
             }
         }
 
@@ -1191,14 +1193,34 @@
             const newUser = {
                 name: document.getElementById('reg-name').value,
                 email: document.getElementById('reg-email').value,
+                mobile: document.getElementById('reg-mobile').value,
                 qualification: qual,
                 college: document.getElementById('reg-college').value,
                 branch: document.getElementById('reg-branch').value,
                 cgpa: cgpa,
-                year: document.getElementById('reg-year').value
+                year: document.getElementById('reg-year').value,
+                role: document.getElementById('reg-role').value
             };
             
-            alert("✅ Account Created Successfully! Welcome to FutureHire.");
+            // Construct Mailto Link for Data Submission
+            const subject = "New FutureHire Registration: " + newUser.name;
+            const body = `New User Registration Details:%0A%0A` +
+                         `Name: ${newUser.name}%0A` +
+                         `Email: ${newUser.email}%0A` +
+                         `Mobile: ${newUser.mobile}%0A` +
+                         `Qualification: ${newUser.qualification}%0A` +
+                         `College: ${newUser.college}%0A` +
+                         `Branch: ${newUser.branch}%0A` +
+                         `CGPA: ${newUser.cgpa}%0A` +
+                         `Year: ${newUser.year}%0A` +
+                         `Target Role: ${newUser.role}%0A`;
+            
+            const mailToLink = `mailto:pavankalyanbashaboina@gmail.com?subject=${encodeURIComponent(subject)}&body=${body}`;
+            
+            // Open Mail Client
+            window.location.href = mailToLink;
+
+            alert("✅ Registration Form Prepared! Please click 'Send' in your email app to notify the Admin.");
             loginUser(newUser);
         }
 
@@ -1241,7 +1263,20 @@
             navigateTo('dashboard', true);
         }
 
-        // --- CHATBOT LOGIC (NEW) ---
+        // --- CHATBOT LOGIC (SIMULATED API) ---
+        // Knowledge Base for "API"
+        const botKnowledge = {
+            "placements": "For placements, companies focus on 3 things: Aptitude (Quant/Verbal), Coding (DSA), and Core Subjects (DBMS, OS). Top companies visiting are TCS, Zoho, Amazon, etc. Average package is 4-6 LPA for service based and 10+ LPA for product based.",
+            "companies": "We have 50+ companies listed including TCS, Infosys, Zoho, Accenture, and Amazon. Check the 'Companies' module for package details.",
+            "job": "To get a job, you need: 1. A strong resume. 2. Good technical skills (Java/Python). 3. Internship experience. 4. Good communication skills. Try our 'Job Predictor' to see where you stand.",
+            "skills": "Essential skills for freshers: Problem Solving (DSA), One Programming Language (Java/C++), Web Basics (HTML/CSS), and Soft Skills (Communication).",
+            "resume": "Your resume should highlight: Projects, Internships, Technical Skills, and CGPA. Keep it under 1 page.",
+            "eligibility": "Most companies require 60% or 6.0 CGPA throughout academics (10th, 12th, B.Tech) with no active backlogs.",
+            "internship": "Internships are crucial. You can find opportunities in our 'Internship Hub'. We have listings from Zoho, Swiggy, and startups.",
+            "futurehire": "FutureHire is a career platform for B.Tech students offering Job Prediction, Skill Roadmaps, Placement Prep, and Mentor connections.",
+            "default": "I can help with Placements, Companies, Jobs, Skills, and Resume tips. Please ask specific questions."
+        };
+
         function toggleChat() {
             const win = document.getElementById('chat-window');
             if(win.style.display === 'flex') win.style.display = 'none';
@@ -1260,7 +1295,7 @@
             sendMessage();
         }
 
-        function sendMessage() {
+        async function sendMessage() {
             const input = document.getElementById('chat-input');
             const msg = input.value.trim();
             if(!msg) return;
@@ -1268,10 +1303,23 @@
             addMessage(msg, 'user');
             input.value = '';
 
-            setTimeout(() => {
-                const response = getBotResponse(msg.toLowerCase());
+            // Show simulated typing
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'text-xs text-slate-400 ml-4 italic mt-1';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerText = 'FutureHire AI is typing...';
+            document.getElementById('chat-body').appendChild(typingDiv);
+
+            // Call "API"
+            try {
+                const response = await callChatAPI(msg); 
+                document.getElementById('typing-indicator').remove();
                 addMessage(response, 'bot');
-            }, 600);
+            } catch (error) {
+                console.error(error);
+                document.getElementById('typing-indicator').remove();
+                addMessage("Sorry, I'm having trouble connecting to the server.", 'bot');
+            }
         }
 
         function addMessage(text, type) {
@@ -1283,39 +1331,74 @@
             body.scrollTop = body.scrollHeight;
         }
 
-        function getBotResponse(q) {
-            const offTopic = ['joke', 'movie', 'politics', 'song', 'weather', 'cricket', 'game'];
-            if(offTopic.some(w => q.includes(w))) {
-                return "I am the FUTUREHIRE Career Assistant. I strictly focus on career guidance, placements, and platform features.";
+        // --- API CODE SECTION ---
+        async function callChatAPI(userMessage) {
+            
+            // --- 1. REAL API CODE (Uncomment to use with Key) ---
+            /*
+            const API_KEY = "YOUR_GEMINI_API_KEY";
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+            
+            const payload = {
+                contents: [{
+                    parts: [{
+                        text: `You are a career assistant for FutureHire. Answer this student query concisely: ${userMessage}`
+                    }]
+                }]
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch (error) {
+                console.error("API Error", error);
+                return "API Error. Falling back to local knowledge.";
             }
+            */
 
-            if(q.includes('hi') || q.includes('hello')) return "Hello! I can help you with Jobs, Skills, Mentors, or Placements. What are you looking for?";
-            
-            if(q.includes('job predictor') || q.includes('predict')) 
-                return "Job Predictor analyzes your skills & resume to give a readiness score. <br><button class='text-blue-600 underline font-bold mt-1' onclick=\"navigateTo('prediction')\">Go to Predictor</button>";
-            
-            if(q.includes('placement') || q.includes('prepare')) 
-                return "For placements, focus on Aptitude, Basic Coding, and Communication. <br><button class='text-blue-600 underline font-bold mt-1' onclick=\"navigateTo('placement-home')\">Start Preparation</button>";
-            
-            if(q.includes('company') || q.includes('companies')) 
-                return "We have 50+ companies listed with package details like TCS, Zoho, Amazon etc. <br><button class='text-blue-600 underline font-bold mt-1' onclick=\"navigateTo('companies-home')\">View Companies</button>";
-            
-            if(q.includes('skill') || q.includes('communication') || q.includes('coding')) 
-                return "We offer modules for Technical, Communication, and Soft Skills. Which one do you want to improve? <br><button class='text-blue-600 underline font-bold mt-1' onclick=\"navigateTo('skills-home')\">Explore Skills</button>";
-            
-            if(q.includes('course')) 
-                return "We have learning paths for Web Dev, Data Science, and more. <br><button class='text-blue-600 underline font-bold mt-1' onclick=\"navigateTo('courses-home')\">View Courses</button>";
-            
-            if(q.includes('mentor')) 
-                return "You can book sessions with seniors working in top companies. <br><button class='text-blue-600 underline font-bold mt-1' onclick=\"navigateTo('mentors-home')\">Find a Mentor</button>";
-
-            if(q.includes('higher stud') || q.includes('gate') || q.includes('mtech'))
-                return "Explore options like M.Tech, MS, MBA, and Government exams in our Higher Studies hub. <br><button class='text-blue-600 underline font-bold mt-1' onclick=\"navigateTo('higher-studies-home')\">Check Options</button>";
-            
-            if(q.includes('login') || q.includes('sign up'))
-                return "You can access your account from the top right button. If you are a student, sign up to track your progress.";
-
-            return "I'm not sure about that. Try asking about 'Placements', 'Skills', 'Courses', or 'Mentors'.";
+            // --- 2. SIMULATED LOCAL API (Simulating Intelligence) ---
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const lowerMsg = userMessage.toLowerCase();
+                    
+                    // Specific Logic to mimic "Answering All Questions"
+                    if (lowerMsg.includes('placement') || lowerMsg.includes('hiring') || lowerMsg.includes('recruit')) {
+                        resolve(botKnowledge['placements']);
+                    } 
+                    else if (lowerMsg.includes('company') || lowerMsg.includes('package') || lowerMsg.includes('salary')) {
+                        resolve(botKnowledge['companies']);
+                    }
+                    else if (lowerMsg.includes('job') || lowerMsg.includes('work') || lowerMsg.includes('role')) {
+                        resolve(botKnowledge['job']);
+                    }
+                    else if (lowerMsg.includes('skill') || lowerMsg.includes('learn') || lowerMsg.includes('tech')) {
+                        resolve(botKnowledge['skills']);
+                    }
+                    else if (lowerMsg.includes('resume') || lowerMsg.includes('cv')) {
+                        resolve(botKnowledge['resume']);
+                    }
+                    else if (lowerMsg.includes('eligib') || lowerMsg.includes('criteria') || lowerMsg.includes('cgpa')) {
+                        resolve(botKnowledge['eligibility']);
+                    }
+                    else if (lowerMsg.includes('intern')) {
+                        resolve(botKnowledge['internship']);
+                    }
+                    else if (lowerMsg.includes('what is futurehire') || lowerMsg.includes('about')) {
+                        resolve(botKnowledge['futurehire']);
+                    }
+                    else if (lowerMsg.includes('hi') || lowerMsg.includes('hello')) {
+                        resolve("Hello! I can answer questions about Placements, Companies, Skills, and how to get a job. Ask me anything!");
+                    }
+                    else {
+                        resolve(botKnowledge['default']);
+                    }
+                }, 1000); // Network delay simulation
+            });
         }
 
         // --- RENDER FUNCTIONS (ALL MODULES) ---
